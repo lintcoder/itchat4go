@@ -25,7 +25,7 @@ func TestLogin(t *testing.T) {
     var status string
     for !isloggedin {
         status = checkLogin(uuid)
-        time.Sleep(time.Duration(2)*time.Second)
+        time.Sleep(time.Duration(1)*time.Second)
         switch {
         case status == "200":
             isloggedin = true
