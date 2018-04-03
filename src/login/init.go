@@ -6,7 +6,8 @@ import (
 
 type chatInfo struct {
     loginInfo map[string]string
-    logintime int64
+    loginBaseRequest map[string]string
+    loginTime int64
     client *http.Client
 }
 

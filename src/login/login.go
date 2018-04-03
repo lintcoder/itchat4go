@@ -97,8 +97,6 @@ func processLoginInfo(loginContent []byte) bool {
     chatter.loginInfo["url"] = string(loginInfoURL[bytes.IndexByte(loginInfoURL, '"')+1 :
     bytes.LastIndex(loginInfoURL, []byte{'/'})])
 
-    fmt.Println(chatter.loginInfo["url"])
-
     indexUrlGrp := [5]string {"wx2.qq.com", "wx8.qq.com", "qq.com", "web2.wechat.com", "wechat.com"}
     detailedUrlGrp := [5][2]string {{"file.wx2.qq.com", "webpush.wx2.qq.com"},
                                     {"file.wx8.qq.com", "webpush.wx8.qq.com"},
@@ -122,11 +120,39 @@ func processLoginInfo(loginContent []byte) bool {
 
     rand.Seed(time.Now().UnixNano())
     chatter.loginInfo["deviceid"] = "e" + strconv.FormatFloat(rand.Float64(), 'f', 6, 64)[2:] + strconv.FormatFloat(rand.Float64(), 'f', 6, 64)[2:] + strconv.FormatFloat(rand.Float64(), 'f', 3, 64)[2:]
-    chatter.logintime = time.Now().Unix() * 1e3
-    chatter.loginInfo["BaseRequest"] = ""
-    fmt.Println(chatter.loginInfo)
-    fmt.Println(chatter.logintime)
+    chatter.loginTime = time.Now().Unix() * 1e3
+    chatter.loginBaseRequest = make(map[string]string)
 
+    chatter.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+        return http.ErrUseLastResponse
+    }
+
+    url := string(loginInfoURL[bytes.IndexByte(loginInfoURL, '"')+1 : bytes.LastIndex(loginInfoURL, []byte{'"'})])
+    req, _ := http.NewRequest("GET", url, nil)
+
+    req.Header.Add("User-Agent", USER_AGENT)
+    resp, _ := chatter.client.Do(req)
+
+    data, _ := ioutil.ReadAll(resp.Body)
+    resp.Body.Close()
+    chatter.client.CheckRedirect = nil
+    return getChildNodes(data)
+}
+
+func getChildNodes(xmltext []byte) bool {
+    text := string(xmltext)
+    targetnodes := [8]string {"skey", "wxsid", "wxuin", "pass_ticket",
+                               "</skey>", "</wxsid>", "</wxuin>", "</pass_ticket>"}
+    for i := 0; i < 4; i++ {
+        if begin, end := strings.Index(text, targetnodes[i]), strings.Index(text, targetnodes[i+4]); begin != -1 && end != -1 {
+            chatter.loginInfo[targetnodes[i]] = text[begin+len(targetnodes[i])+1 : end]
+            chatter.loginBaseRequest[targetnodes[i]] = text[begin+len(targetnodes[i])+1 : end]
+        } else {
+           fmt.Println("Your wechat account may be LIMITED to log in WEB wechat, error info:")
+           fmt.Println(text)
+           return false
+        }
+    }
     return true
 }
 
