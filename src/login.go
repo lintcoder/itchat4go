@@ -11,6 +11,7 @@ import (
     "strings"
     "math/rand"
     "strconv"
+    "encoding/json"
     qrcode "github.com/skip2/go-qrcode"
 )
 
@@ -143,10 +144,12 @@ func getChildNodes(xmltext []byte) bool {
     text := string(xmltext)
     targetnodes := [8]string {"skey", "wxsid", "wxuin", "pass_ticket",
                                "</skey>", "</wxsid>", "</wxuin>", "</pass_ticket>"}
+    baserequest := [4]string {"Skey", "Sid", "Uin", "DeviceID"}
+
     for i := 0; i < 4; i++ {
         if begin, end := strings.Index(text, targetnodes[i]), strings.Index(text, targetnodes[i+4]); begin != -1 && end != -1 {
             chatter.loginInfo[targetnodes[i]] = text[begin+len(targetnodes[i])+1 : end]
-            chatter.loginBaseRequest[targetnodes[i]] = text[begin+len(targetnodes[i])+1 : end]
+            chatter.loginBaseRequest[baserequest[i]] = text[begin+len(targetnodes[i])+1 : end]
         } else {
            fmt.Println("Your wechat account may be LIMITED to log in WEB wechat, error info:")
            fmt.Println(text)
@@ -189,4 +192,26 @@ func checkLogin(uuid string) string {
    }
 
    return "400"
+}
+
+func webInit() {
+    localtime := time.Now()
+    totalsecs := localtime.Unix()
+    url := fmt.Sprintf("%s/webwxinit?r=%d&pass_ticket=%s", chatter.loginInfo["url"], -totalsecs/1579, chatter.loginInfo["pass_ticket"])
+
+    oridata := map[string] map[string]string {
+        "BaseRequest": chatter.loginBaseRequest,
+    }
+    reqdata, _ := json.Marshal(oridata)
+
+    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqdata))
+    req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+    req.Header.Add("User-Agent", USER_AGENT)
+    resp, _ := chatter.client.Do(req)
+    fmt.Println(resp.StatusCode)
+
+    respdata, _ := ioutil.ReadAll(resp.Body)
+    fmt.Println(string(respdata))
+
+    resp.Body.Close()
 }

@@ -2,6 +2,7 @@ package itchat4go
 
 import (
     "net/http"
+    "sync"
 )
 
 type chatInfo struct {
@@ -9,6 +10,7 @@ type chatInfo struct {
     loginBaseRequest map[string]string
     loginTime int64
     client *http.Client
+    wg sync.WaitGroup
 }
 
 var chatter *chatInfo
