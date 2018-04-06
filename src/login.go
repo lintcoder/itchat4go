@@ -53,32 +53,16 @@ func getQRuuid() (string, error) {
     data, _ := ioutil.ReadAll(response.Body)
     response.Body.Close()
 
-    pattern := "window.QRLogin.code = \\d+; window.QRLogin.uuid = \"\\S+?\";"
+    pattern := "window.QRLogin.code = (\\d+); window.QRLogin.uuid = \"(\\S+?)\";"
     reg, _ := regexp.Compile(pattern)
-    if matchstr := reg.FindSubmatch(data); matchstr == nil {
+    if matchindex := reg.FindSubmatchIndex(data); matchindex == nil {
         return uuid, errors.New("No match pattern in response body")
+    } else if string(data[matchindex[2]:matchindex[3]]) != "200" {
+        return uuid, errors.New("Response not OK")
     } else {
-        var ct int
-        for i, ch := range matchstr[0] {
-            if ch == '=' && ct == 0 && string(matchstr[0][i+2:i+5]) == "200" {
-                ct++
-            } else if ch == '=' && ct == 1 {
-                j := i + 3
-                for ; j < len(matchstr[0]); j++ {
-                    if matchstr[0][j] == '"' {
-                        break
-                    }
-                }
-                uuid = string(matchstr[0][i+3:j])
-                break
-            }
-        }
+        uuid = string(data[matchindex[4]:matchindex[5]])
+        return uuid, nil
     }
-    if uuid == "" {
-        err = errors.New("get QR uuid failed")
-    }
-
-    return uuid, err
 }
 
 func getQRPic(uuid string) bool {
@@ -92,11 +76,10 @@ func getQRPic(uuid string) bool {
 }
 
 func processLoginInfo(loginContent []byte) bool {
-    pattern := "window.redirect_uri=\"\\S+\";"
+    pattern := "window.redirect_uri=\"(\\S+)\";"
     reg, _ := regexp.Compile(pattern)
-    loginInfoURL := reg.Find(loginContent)
-    chatter.loginInfo["url"] = string(loginInfoURL[bytes.IndexByte(loginInfoURL, '"')+1 :
-    bytes.LastIndex(loginInfoURL, []byte{'/'})])
+    loginInfoURL := reg.FindSubmatch(loginContent)
+    chatter.loginInfo["url"] = string(loginInfoURL[1][: bytes.LastIndex(loginInfoURL[1], []byte{'/'})])
 
     indexUrlGrp := [5]string {"wx2.qq.com", "wx8.qq.com", "qq.com", "web2.wechat.com", "wechat.com"}
     detailedUrlGrp := [5][2]string {{"file.wx2.qq.com", "webpush.wx2.qq.com"},
@@ -128,12 +111,11 @@ func processLoginInfo(loginContent []byte) bool {
         return http.ErrUseLastResponse
     }
 
-    url := string(loginInfoURL[bytes.IndexByte(loginInfoURL, '"')+1 : bytes.LastIndex(loginInfoURL, []byte{'"'})])
+    url := string(loginInfoURL[1])
     req, _ := http.NewRequest("GET", url, nil)
 
     req.Header.Add("User-Agent", USER_AGENT)
     resp, _ := chatter.client.Do(req)
-
     data, _ := ioutil.ReadAll(resp.Body)
     resp.Body.Close()
     chatter.client.CheckRedirect = nil
@@ -166,32 +148,25 @@ func checkLogin(uuid string) string {
     -totalsecs/1579, totalsecs)
 
     req, _ := http.NewRequest("GET", url, nil)
-
     req.Header.Add("User-Agent", USER_AGENT)
     response, _ := chatter.client.Do(req)
-
     data, _ := ioutil.ReadAll(response.Body)
 
-    pattern := "window.code=\\d+"
+    pattern := "window.code=(\\d+)"
     reg, _ := regexp.Compile(pattern)
-    if matchstr := reg.FindSubmatch(data); matchstr != nil {
-        for i, ch := range matchstr[0] {
-           if ch == '=' {
-               status := string(matchstr[0][i+1:i+4])
-               if status != "200" {
-                   return status
-               } else {
-                   if processLoginInfo(data) {
-                       return "200"
-                   } else {
-                       return "400"
-                   }
-               }
-           }
-       }
-   }
-
-   return "400"
+    if matchstr := reg.FindSubmatchIndex(data); matchstr != nil {
+        if status := string(data[matchstr[2]:matchstr[3]]); status == "200" {
+            if processLoginInfo(data) {
+                return "200"
+            } else {
+                return "400"
+            }
+        } else {
+            return status
+        }
+    } else {
+        return "400"
+    }
 }
 
 func webInit() {
@@ -211,7 +186,9 @@ func webInit() {
     fmt.Println(resp.StatusCode)
 
     respdata, _ := ioutil.ReadAll(resp.Body)
-    fmt.Println(string(respdata))
-
     resp.Body.Close()
+
+    var dict map[string]interface{}
+    json.Unmarshal(respdata, &dict)
+    emojiFormatter(dict["User"], "NickName")
 }

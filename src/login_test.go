@@ -24,10 +24,10 @@ func TestLogin(t *testing.T) {
         return
     }
 
-    loginStatus := make(chan struct{}, 1)
-    var filename string = "QRcode.png"
-    chatter.wg.Add(1)
-    go displayQRPic(loginStatus, filename)
+//    loginStatus := make(chan struct{}, 1)
+//    var filename string = "QRcode.png"
+//    chatter.wg.Add(1)
+//    go displayQRPic(loginStatus, filename)
 
     isloggedin := false
     var status string
@@ -36,12 +36,12 @@ func TestLogin(t *testing.T) {
         time.Sleep(time.Duration(1)*time.Second)
         switch {
         case status == "200":
-            loginStatus <- struct{}{}
+//            loginStatus <- struct{}{}
             isloggedin = true
         case status == "201":
             fmt.Println("please confirm on your phone")
         case status != "408":
-            close(loginStatus)
+//            close(loginStatus)
             break
         }
     }
