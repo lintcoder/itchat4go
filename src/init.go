@@ -9,6 +9,7 @@ type chatInfo struct {
     loginInfo map[string]string
     loginBaseRequest map[string]string
     loginTime int64
+    inviteStartCount int
     client *http.Client
     wg sync.WaitGroup
 }

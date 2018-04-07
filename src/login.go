@@ -187,8 +187,11 @@ func webInit() {
 
     respdata, _ := ioutil.ReadAll(resp.Body)
     resp.Body.Close()
+    fmt.Println(string(respdata))
 
     var dict map[string]interface{}
     json.Unmarshal(respdata, &dict)
     emojiFormatter(dict["User"], "NickName")
+    chatter.inviteStartCount = int(dict["InviteStartCount"].(float64))
+    fmt.Println(dict["SyncKey"])
 }
