@@ -6,10 +6,8 @@ import (
 )
 
 type chatInfo struct {
-    loginInfo map[string]string
+    loginInfo map[string]interface{}
     loginBaseRequest map[string]string
-    loginTime int64
-    inviteStartCount int
     client *http.Client
     wg sync.WaitGroup
 }
@@ -18,7 +16,7 @@ var chatter *chatInfo
 
 func init() {
     chatter = new(chatInfo)
-    chatter.loginInfo = make(map[string]string)
+    chatter.loginInfo = make(map[string]interface{})
     chatter.client = &http.Client{}
 }
 

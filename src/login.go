@@ -90,7 +90,7 @@ func processLoginInfo(loginContent []byte) bool {
 
     flag := false
     for i := 0; i < 5; i++ {
-        if strings.Contains(chatter.loginInfo["url"], indexUrlGrp[i]) {
+        if strings.Contains(chatter.loginInfo["url"].(string), indexUrlGrp[i]) {
             chatter.loginInfo["fileUrl"] = fmt.Sprintf("https://%s/cgi-bin/mmwebwx-bin", detailedUrlGrp[i][0])
             chatter.loginInfo["syncUrl"] = fmt.Sprintf("https://%s/cgi-bin/mmwebwx-bin", detailedUrlGrp[i][1])
             flag = true
@@ -104,7 +104,7 @@ func processLoginInfo(loginContent []byte) bool {
 
     rand.Seed(time.Now().UnixNano())
     chatter.loginInfo["deviceid"] = "e" + strconv.FormatFloat(rand.Float64(), 'f', 6, 64)[2:] + strconv.FormatFloat(rand.Float64(), 'f', 6, 64)[2:] + strconv.FormatFloat(rand.Float64(), 'f', 3, 64)[2:]
-    chatter.loginTime = time.Now().Unix() * 1e3
+    chatter.loginInfo["loginTime"] = time.Now().Unix() * 1e3
     chatter.loginBaseRequest = make(map[string]string)
 
     chatter.client.CheckRedirect = func(req *http.Request, via []*http.Request) error {
@@ -172,7 +172,7 @@ func checkLogin(uuid string) string {
 func webInit() {
     localtime := time.Now()
     totalsecs := localtime.Unix()
-    url := fmt.Sprintf("%s/webwxinit?r=%d&pass_ticket=%s", chatter.loginInfo["url"], -totalsecs/1579, chatter.loginInfo["pass_ticket"])
+    url := fmt.Sprintf("%s/webwxinit?r=%d&pass_ticket=%s", chatter.loginInfo["url"].(string), -totalsecs/1579, chatter.loginInfo["pass_ticket"].(string))
 
     oridata := map[string] map[string]string {
         "BaseRequest": chatter.loginBaseRequest,
@@ -192,6 +192,6 @@ func webInit() {
     var dict map[string]interface{}
     json.Unmarshal(respdata, &dict)
     emojiFormatter(dict["User"], "NickName")
-    chatter.inviteStartCount = int(dict["InviteStartCount"].(float64))
+    chatter.loginInfo["InviteStartCount"] = dict["InviteStartCount"]
     fmt.Println(dict["SyncKey"])
 }
