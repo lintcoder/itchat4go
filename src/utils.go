@@ -58,3 +58,13 @@ func emojiFormatter(dict interface{}, key string) {
     }
     dict.(map[string]interface{})[key] = string(reg.ReplaceAllFunc(snew, formatfunc))
 }
+
+func wrapUserDict(d map[string]interface{}) userDictWrapper {
+     var r userDictWrapper
+     vflag := d["VerifyFlag"].(int)
+     if vflag & 8 == 0 {
+         r = new (userClass)
+         r.selfInit(d)
+     }
+     return r
+ }

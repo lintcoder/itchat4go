@@ -23,6 +23,7 @@ func TestLogin(t *testing.T) {
     if !getQRPic(uuid) {
         return
     }
+    time.Sleep(time.Duration(2)*time.Second)
 
     loginStatus := make(chan struct{}, 1)
     var filename string = "qrpic.png"

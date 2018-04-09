@@ -187,11 +187,46 @@ func webInit() {
 
     respdata, _ := ioutil.ReadAll(resp.Body)
     resp.Body.Close()
-    fmt.Println(string(respdata))
 
     var dict map[string]interface{}
     json.Unmarshal(respdata, &dict)
     emojiFormatter(dict["User"], "NickName")
     chatter.loginInfo["InviteStartCount"] = dict["InviteStartCount"]
-    fmt.Println(dict["SyncKey"])
+    friendInfo := make(map[string]interface{})
+    for _, k := range friendInfoArr1 {
+        friendInfo[k] = ""
+    }
+    for _, k := range friendInfoArr2 {
+        friendInfo[k] = 0
+    }
+    friendInfo["MemberList"] = make([]interface{}, 1)
+    for k, v := range dict["User"].(map[string]interface{}) {
+        switch v.(type) {
+            case float64:
+                v = int(v.(float64))
+        }
+        friendInfo[k] = v
+    }
+    chatter.loginInfo["User"] = wrapUserDict(friendInfo)
+    fmt.Println(chatter.loginInfo["User"])
+    chatter.loginInfo["SyncKey"] = dict["SyncKey"]
+
+    var items []string
+    var ritem map[string]interface{}
+    for _, item := range dict["SyncKey"].(map[string]interface{})["List"].([]interface{}) {
+        ritem = item.(map[string]interface{})
+        items = append(items, fmt.Sprintf("%d_%d", int(ritem["Key"].(float64)), int(ritem["Val"].(float64))))
+    }
+    synckey := items[0]
+    for i := 1; i < len(items); i++ {
+        synckey = synckey + "|" + items[i]
+    }
+    chatter.loginInfo["synckey"] = synckey
+    chatter.userName = dict["User"].(map[string]interface{})["UserName"].(string)
+    chatter.nickName = dict["User"].(map[string]interface{})["NickName"].(string)
+    var contactList []interface{}
+    if cl, ok := dict["ContactList"]; ok {
+        contactList = append(contactList, cl)
+    }
+    fmt.Println(len(contactList))
 }
