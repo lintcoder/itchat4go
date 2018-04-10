@@ -224,9 +224,22 @@ func webInit() {
     chatter.loginInfo["synckey"] = synckey
     chatter.userName = dict["User"].(map[string]interface{})["UserName"].(string)
     chatter.nickName = dict["User"].(map[string]interface{})["NickName"].(string)
+
     var contactList []interface{}
+    var chatroomList, otherList []map[string]interface{}
     if cl, ok := dict["ContactList"]; ok {
-        contactList = append(contactList, cl)
+        contactList = append(contactList, cl.([]interface{})...)
     }
     fmt.Println(len(contactList))
+
+    for _, m := range contactList {
+        if int(m.(map[string]interface{})["Sex"].(float64)) != 0 {
+            otherList = append(otherList, m.(map[string]interface{}))
+        } else if strings.Contains(m.(map[string]interface{})["UserName"].(string), "@@") {
+            m.(map[string]interface{})["MemberList"] = make([]interface{}, 1)
+            chatroomList = append(chatroomList, m.(map[string]interface{}))
+        } else if strings.Contains(m.(map[string]interface{})["UserName"].(string), "@") {
+            otherList = append(otherList, m.(map[string]interface{}))
+        }
+    }
 }
