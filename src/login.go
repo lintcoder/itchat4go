@@ -199,7 +199,7 @@ func webInit() {
     for _, k := range friendInfoArr2 {
         friendInfo[k] = 0
     }
-    friendInfo["MemberList"] = make([]interface{}, 1)
+    friendInfo["MemberList"] = nil
     for k, v := range dict["User"].(map[string]interface{}) {
         switch v.(type) {
             case float64:
@@ -236,10 +236,15 @@ func webInit() {
         if int(m.(map[string]interface{})["Sex"].(float64)) != 0 {
             otherList = append(otherList, m.(map[string]interface{}))
         } else if strings.Contains(m.(map[string]interface{})["UserName"].(string), "@@") {
-            m.(map[string]interface{})["MemberList"] = make([]interface{}, 1)
+            m.(map[string]interface{})["MemberList"] = nil
             chatroomList = append(chatroomList, m.(map[string]interface{}))
         } else if strings.Contains(m.(map[string]interface{})["UserName"].(string), "@") {
             otherList = append(otherList, m.(map[string]interface{}))
         }
+    }
+
+    if len(chatroomList) > 0 {
+        fmt.Println(len(chatroomList))
+        updateLocalChatrooms(chatroomList)
     }
 }
