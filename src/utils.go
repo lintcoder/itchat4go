@@ -68,3 +68,27 @@ func wrapUserDict(d map[string]interface{}) userDictWrapper {
      }
      return r
  }
+
+func searchDictList(l []map[string]interface{}, key string, value string) map[string]interface{} {
+    for _, i := range l {
+        if v, ok := i[key]; ok && v.(string) == value {
+            return i
+        }
+    }
+    return nil
+}
+
+func updateInfoDict(oldInfoDict map[string]interface{}, newInfoDict map[string]interface{}) {
+    for k, v := range newInfoDict {
+        switch v.(type) {
+        case []interface{}:
+            return
+        case map[string]interface{}:
+            return
+        default:
+            if _, ok := oldInfoDict[k]; !ok || (v != nil && v != "" && v != '0' && v != 0) {
+                oldInfoDict[k] = v
+            }
+        }
+    }
+}

@@ -14,6 +14,7 @@ type chatInfo struct {
     loginInfo map[string]interface{}
     loginBaseRequest map[string]string
     memberList []interface{}
+    chatroomList []map[string]interface{}
     storageClass
     client *http.Client
     wg sync.WaitGroup
@@ -31,6 +32,7 @@ var friendInfoArr2 = []string {"UniFriend", "Sex", "AppAccountFlag", "VerifyFlag
 func init() {
     chatter = new(chatInfo)
     chatter.loginInfo = make(map[string]interface{})
+    chatter.chatroomList = make([]map[string]interface{}, 0)
     chatter.client = &http.Client{}
 }
 
