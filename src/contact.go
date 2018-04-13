@@ -2,6 +2,8 @@ package itchat4go
 
 import (
     "fmt"
+    "strconv"
+    "encoding/json"
 )
 
 func updateLocalChatrooms(l []map[string]interface{}) {
@@ -45,6 +47,58 @@ func updateLocalChatrooms(l []map[string]interface{}) {
         }
         fmt.Println(oldChatroom)
 
-//        if len(chatroom["MemberList"]) != len(oldChatroom["MemberList"]) && chatroom["MemberList"] != nil {
+        if chatroom["MemberList"] != nil && len(chatroom["MemberList"].([]interface{})) != len(oldChatroom["MemberList"].([]interface{})) {
+            var existUserNames map[string]struct{}
+            var delList []int
+            for _, member := range chatroom["MemberList"].([]interface{}) {
+                existUserNames[member.(map[string]interface{})["UserName"].(string)] = struct{}{}
+            }
+            for i, member := range oldChatroom["MemberList"].([]interface{}) {
+                if _, ok := existUserNames[member.(map[string]interface{})["UserName"].(string)]; ok {
+                    delList = append(delList, i)
+                }
+            }
+            var res []interface{}
+            index := 0
+            for i := 0; i < len(delList); i++ {
+                res = append(res, oldChatroom["MemberList"].([]interface{})[index:delList[i]]...)
+                index = delList[i]+1
+            }
+            oldChatroom["MemberList"] = append(res, oldChatroom["MemberList"].([]interface{})[index:]...)
+        }
+
+        if _, ok := oldChatroom["ChatRoomOwner"]; ok {
+            if _, ok = oldChatroom["MemberList"]; ok {
+                owner := searchDictList(oldChatroom["MemberList"].([]map[string]interface{}), "UserName", oldChatroom["ChatRoomOwner"].(string))
+                if owner == nil {
+                    oldChatroom["OwnerUin"] = 0
+                } else if uin, ok := owner["Uin"]; ok {
+                    oldChatroom["OwnerUin"] = uin
+                } else {
+                    oldChatroom["OwnerUin"] = 0
+                }
+            }
+        }
+
+        if uin, ok := oldChatroom["OwnerUin"]; ok && int(uin.(float64)) != 0 {
+            wxuin, _ := strconv.Atoi(chatter.loginInfo["wxuin"].(string))
+            oldChatroom["IsAdmin"] = int(uin.(float64)) == wxuin
+        } else {
+            oldChatroom["IsAdmin"] = nil
+        }
+        if ml := oldChatroom["MemberList"]; ml != nil {
+            newSelf := searchDictList(ml.([]map[string]interface{}), "UserName", chatter.userName)
+            if newSelf != nil {
+                oldChatroom["Self"] = newSelf
+            } else {
+                marsh, _ := json.Marshal(chatter.loginInfo["User"])
+                json.Unmarshal(marsh, oldChatroom["Self"])
+            }
+        } else {
+            oldChatroom["Self"] = make(map[string]interface{})
+            marsh, _ := json.Marshal(chatter.loginInfo["User"])
+            json.Unmarshal(marsh, oldChatroom["Self"])
+            fmt.Println(oldChatroom["Self"])
+        }
     }
 }
