@@ -3,10 +3,9 @@ package itchat4go
 import (
     "fmt"
     "strconv"
-    "encoding/json"
 )
 
-func updateLocalChatrooms(l []map[string]interface{}) {
+func updateLocalChatrooms(l []map[string]interface{}) map[string]interface{} {
     for _, chatroom := range l {
         emojiFormatter(chatroom, "NickName")
         fmt.Println(chatroom["NickName"])
@@ -45,7 +44,6 @@ func updateLocalChatrooms(l []map[string]interface{}) {
             chatter.chatroomList = append(chatter.chatroomList, chatroom)
             oldChatroom = searchDictList(chatter.chatroomList, "UserName", chatroom["UserName"].(string))
         }
-        fmt.Println(oldChatroom)
 
         if chatroom["MemberList"] != nil && len(chatroom["MemberList"].([]interface{})) != len(oldChatroom["MemberList"].([]interface{})) {
             var existUserNames map[string]struct{}
@@ -86,19 +84,27 @@ func updateLocalChatrooms(l []map[string]interface{}) {
         } else {
             oldChatroom["IsAdmin"] = nil
         }
+
         if ml := oldChatroom["MemberList"]; ml != nil {
             newSelf := searchDictList(ml.([]map[string]interface{}), "UserName", chatter.userName)
             if newSelf != nil {
                 oldChatroom["Self"] = newSelf
             } else {
-                marsh, _ := json.Marshal(chatter.loginInfo["User"])
-                json.Unmarshal(marsh, oldChatroom["Self"])
+                oldChatroom["Self"] = deepCopy(chatter.loginInfo["User"])
             }
         } else {
-            oldChatroom["Self"] = make(map[string]interface{})
-            marsh, _ := json.Marshal(chatter.loginInfo["User"])
-            json.Unmarshal(marsh, oldChatroom["Self"])
-            fmt.Println(oldChatroom["Self"])
+            oldChatroom["Self"] = deepCopy(chatter.loginInfo["User"])
         }
     }
+
+    res := make(map[string]interface{})
+    res["Type"] = "System"
+    res["SystemInfo"] = "chatrooms"
+    res["FromUserName"] = chatter.userName
+    res["ToUserName"] = chatter.userName
+    res["Text"] = make([]interface{}, len(l))
+    for i := 0; i < len(l); i++ {
+        res["Text"].([]interface{})[i] = l[i]["UserName"]
+    }
+    return res
 }

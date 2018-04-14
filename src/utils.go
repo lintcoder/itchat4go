@@ -92,3 +92,20 @@ func updateInfoDict(oldInfoDict map[string]interface{}, newInfoDict map[string]i
         }
     }
 }
+
+func deepCopy(src interface{}) interface{} {
+    if value, ok := src.(map[string]interface{}); ok {
+        dst := make(map[string]interface{})
+        for k, v := range value {
+            dst[k] = deepCopy(v)
+        }
+        return dst
+    } else if value, ok := src.([]interface{}); ok {
+        dst := make([]interface{}, len(value))
+        for k, v := range value {
+            dst[k] = deepCopy(v)
+        }
+        return dst
+    }
+    return src
+}
