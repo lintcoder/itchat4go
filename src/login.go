@@ -209,6 +209,7 @@ func webInit() {
     }
     chatter.loginInfo["User"] = wrapUserDict(friendInfo)
     fmt.Println(chatter.loginInfo["User"])
+    chatter.memberList = append(chatter.memberList, chatter.loginInfo["User"].(*userClass).dict)
     chatter.loginInfo["SyncKey"] = dict["SyncKey"]
 
     var items []string
@@ -246,5 +247,9 @@ func webInit() {
     if len(chatroomList) > 0 {
         fmt.Println(len(chatroomList))
         updateLocalChatrooms(chatroomList)
+    }
+    if len(otherList) > 0 {
+        fmt.Println(len(otherList))
+        updateLocalFriends(otherList)
     }
 }

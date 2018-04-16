@@ -13,7 +13,8 @@ type storageClass struct {
 type chatInfo struct {
     loginInfo map[string]interface{}
     loginBaseRequest map[string]string
-    memberList []interface{}
+    memberList []map[string]interface{}
+    mpList []map[string]interface{}
     chatroomList []map[string]interface{}
     storageClass
     client *http.Client

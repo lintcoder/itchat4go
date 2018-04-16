@@ -108,3 +108,29 @@ func updateLocalChatrooms(l []map[string]interface{}) map[string]interface{} {
     }
     return res
 }
+
+func updateLocalFriends(l []map[string]interface{}) {
+    fullList := append(chatter.memberList, chatter.mpList...)
+    for _, friend := range l {
+        if _, ok := friend["NickName"]; ok {
+            emojiFormatter(friend, "NickName")
+        }
+        if _, ok := friend["DisplayName"]; ok {
+            emojiFormatter(friend, "DisplayName")
+        }
+        if _, ok := friend["RemarkName"]; ok {
+            emojiFormatter(friend, "RemarkName")
+        }
+        oldInfoDict := searchDictList(fullList, "UserName", friend["UserName"].(string))
+        if oldInfoDict == nil {
+            oldInfoDict = deepCopy(friend).(map[string]interface{})
+            if int(oldInfoDict["VerifyFlag"].(float64)) & 8 == 0 {
+                chatter.memberList = append(chatter.memberList, oldInfoDict)
+            } else {
+                chatter.mpList = append(chatter.mpList, oldInfoDict)
+            }
+        } else {
+            updateInfoDict(oldInfoDict, friend)
+        }
+    }
+}
