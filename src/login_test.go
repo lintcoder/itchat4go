@@ -54,4 +54,5 @@ func TestLogin(t *testing.T) {
         fmt.Println("error occurs")
     }
     webInit()
+    showMobileLogin()
 }

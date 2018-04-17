@@ -169,7 +169,7 @@ func checkLogin(uuid string) string {
     }
 }
 
-func webInit() {
+func webInit() map[string]interface{} {
     localtime := time.Now()
     totalsecs := localtime.Unix()
     url := fmt.Sprintf("%s/webwxinit?r=%d&pass_ticket=%s", chatter.loginInfo["url"].(string), -totalsecs/1579, chatter.loginInfo["pass_ticket"].(string))
@@ -252,4 +252,31 @@ func webInit() {
         fmt.Println(len(otherList))
         updateLocalFriends(otherList)
     }
+    return dict
+}
+
+func showMobileLogin() *returnValue {
+    url := fmt.Sprintf("%s/webwxstatusnotify?lang=zh_CN&pass_ticket=%s", chatter.loginInfo["url"], chatter.loginInfo["pass_ticket"])
+    oridata := map[string]interface{} {
+        "BaseRequest": chatter.loginBaseRequest,
+        "Code": 3,
+        "FromUserName": chatter.userName,
+        "ToUserName": chatter.userName,
+        "ClientMsgId": int(time.Now().Unix()),
+    }
+    reqdata, _ := json.Marshal(oridata)
+
+    req, _ := http.NewRequest("POST", url, bytes.NewBuffer(reqdata))
+    req.Header.Add("Content-Type", "application/json;charset=UTF-8")
+    req.Header.Add("User-Agent", USER_AGENT)
+    resp, _ := chatter.client.Do(req)
+
+    respdata, _ := ioutil.ReadAll(resp.Body)
+    resp.Body.Close()
+    var data map[string]interface{}
+    json.Unmarshal(respdata, &data)
+    ret := new(returnValue)
+    ret.setValue(data)
+    fmt.Println(ret)
+    return ret
 }
