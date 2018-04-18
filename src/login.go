@@ -208,7 +208,6 @@ func webInit() map[string]interface{} {
         friendInfo[k] = v
     }
     chatter.loginInfo["User"] = wrapUserDict(friendInfo)
-    fmt.Println(chatter.loginInfo["User"])
     chatter.memberList = append(chatter.memberList, chatter.loginInfo["User"].(*userClass).dict)
     chatter.loginInfo["SyncKey"] = dict["SyncKey"]
 

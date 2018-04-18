@@ -3,6 +3,10 @@ package itchat4go
 import (
     "fmt"
     "strconv"
+    "io/ioutil"
+    "time"
+    "net/http"
+    "encoding/json"
 )
 
 func updateLocalChatrooms(l []map[string]interface{}) map[string]interface{} {
@@ -133,4 +137,58 @@ func updateLocalFriends(l []map[string]interface{}) {
             updateInfoDict(oldInfoDict, friend)
         }
     }
+}
+
+func getContact(update bool) interface{} {
+    if !update {
+       return deepCopy(chatter.chatroomList)
+    }
+    seq, memberList := 0, make([]interface{}, 0)
+    for {
+        seq, batchMemberList := doGetContact(seq)
+        if batchMemberList != nil {
+            memberList = append(memberList, batchMemberList...)
+        }
+        if seq == 0 {
+            break
+        }
+    }
+
+    fmt.Println(memberList)
+    return nil
+}
+
+func doGetContact(seq int) (int, []interface{}) {
+    url := fmt.Sprintf("%s/webwxgetcontact?r=%d&seq=%d&skey=%s", chatter.loginInfo["url"], int(time.Now().Unix()), seq, chatter.loginInfo["skey"])
+
+    req, _ := http.NewRequest("GET", url, nil)
+    req.Header.Add("ContentType", "application/json;charset=UTF-8")
+    req.Header.Add("User-Agent", USER_AGENT)
+    resp, err := chatter.client.Do(req)
+    if err != nil {
+        fmt.Println("Failed to fetch contact, that may because of the amount of your chatrooms")
+        fmt.Println(err)
+        return 0, nil
+    }
+
+    respdata, _ := ioutil.ReadAll(resp.Body)
+    resp.Body.Close()
+    var data map[string]interface{}
+    json.Unmarshal(respdata, &data)
+    fmt.Println(data)
+
+    var ok bool
+    var memberList []interface{}
+    if _, ok = data["Seq"]; ok {
+        seq = int(data["Seq"].(float64))
+    } else {
+        seq = 0
+    }
+    if _, ok = data["MemberList"]; ok {
+        memberList = data["MemberList"].([]interface{})
+    } else {
+        memberList = nil
+    }
+
+    return seq, memberList
 }
