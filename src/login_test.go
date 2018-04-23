@@ -55,4 +55,5 @@ func TestLogin(t *testing.T) {
     }
     webInit()
     showMobileLogin()
+    getContact(true)
 }
